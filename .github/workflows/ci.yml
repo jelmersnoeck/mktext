@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '5.9'
+
+      - name: Build
+        run: swift build
+
+      - name: Build Release
+        run: swift build -c release
+
+  lint:
+    name: Swift Format Check
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Swift format
+        run: |
+          if command -v swift-format &> /dev/null; then
+            swift-format lint --recursive mktext/
+          else
+            echo "swift-format not installed, skipping..."
+          fi

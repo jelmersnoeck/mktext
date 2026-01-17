@@ -26,56 +26,64 @@ A native macOS markdown editor with Typora-style WYSIWYG editing. Write in markd
 
 ## Installation
 
-### Prerequisites
+### Download (Recommended)
 
-- macOS 13.0 (Ventura) or later
-- Swift 5.9 or later (included with Xcode 15+)
+1. Go to the [Releases](https://github.com/yourusername/mktext/releases/latest) page
+2. Download `mktext-X.X.X-universal.dmg`
+3. Open the DMG and drag mktext to your Applications folder
+4. Launch mktext from Applications
+
+> **Note**: On first launch, you may need to right-click and select "Open" to bypass Gatekeeper, as the app is not notarized.
+
+### Install via Homebrew (Coming Soon)
+
+```bash
+brew install --cask mktext
+```
 
 ### Build from Source
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/mktext.git
-   cd mktext
-   ```
+#### Prerequisites
 
-2. **Build the app**
-   ```bash
-   swift build -c release
-   ```
+- macOS 13.0 (Ventura) or later
+- Swift 5.9 or later (included with Xcode 15+ or install via `swiftenv`)
 
-3. **Create the app bundle**
-   ```bash
-   # Create bundle structure
-   mkdir -p mktext.app/Contents/MacOS
-   mkdir -p mktext.app/Contents/Resources
-
-   # Copy executable
-   cp .build/release/mktext mktext.app/Contents/MacOS/
-
-   # Copy resources (if iconset exists)
-   if [ -d "mktext.iconset" ]; then
-       iconutil -c icns mktext.iconset -o mktext.app/Contents/Resources/AppIcon.icns
-   fi
-
-   # Copy Info.plist
-   cp mktext/Info.plist mktext.app/Contents/
-   ```
-
-4. **Run the app**
-   ```bash
-   open mktext.app
-   ```
-
-### Quick Install Script
-
-Run this one-liner to build and launch:
+#### Using the Build Script
 
 ```bash
-swift build -c release && \
-mkdir -p mktext.app/Contents/{MacOS,Resources} && \
-cp .build/release/mktext mktext.app/Contents/MacOS/ && \
-cp mktext/Info.plist mktext.app/Contents/ && \
+# Clone the repository
+git clone https://github.com/yourusername/mktext.git
+cd mktext
+
+# Build and create app bundle
+./scripts/build.sh --release
+
+# Run the app
+open mktext.app
+```
+
+#### Create a DMG
+
+```bash
+./scripts/build.sh --dmg --version 1.0.0
+```
+
+#### Manual Build
+
+```bash
+# Clone and enter directory
+git clone https://github.com/yourusername/mktext.git
+cd mktext
+
+# Build release binary (Universal: Apple Silicon + Intel)
+swift build -c release
+
+# Create app bundle
+mkdir -p mktext.app/Contents/{MacOS,Resources}
+cp .build/release/mktext mktext.app/Contents/MacOS/
+cp mktext/Info.plist mktext.app/Contents/
+
+# Run
 open mktext.app
 ```
 
@@ -200,6 +208,24 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Releasing
+
+Releases are automated via GitHub Actions. To create a new release:
+
+1. Update version references if needed
+2. Create and push a version tag:
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+3. GitHub Actions will automatically:
+   - Build a universal binary (Apple Silicon + Intel)
+   - Create the app bundle with icon
+   - Generate a DMG installer
+   - Create a GitHub Release with artifacts
+
+You can also manually trigger a release from the Actions tab using "workflow_dispatch".
 
 ## Roadmap
 

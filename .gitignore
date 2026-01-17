@@ -20,7 +20,11 @@ Package.resolved
 
 # Generated files
 mktext.iconset/
-generate_icon.swift
+*.dmg
+*.dmg.sha256
+dmg_temp/
+AppIcon.icns
+checksums.txt
 
 # macOS
 .DS_Store

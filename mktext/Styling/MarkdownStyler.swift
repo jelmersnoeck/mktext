@@ -4,6 +4,9 @@ import AppKit
 class MarkdownStyler {
     private let theme: MarkdownTheme
 
+    // Tiny font used to effectively hide syntax characters (takes no space)
+    private let hiddenFont = NSFont.systemFont(ofSize: 0.01)
+
     var defaultAttributes: [NSAttributedString.Key: Any] {
         [
             .font: theme.bodyFont,
@@ -104,6 +107,28 @@ class MarkdownStyler {
         }
     }
 
+    // MARK: - Syntax Hiding
+
+    /// Hide syntax characters by making them effectively invisible and zero-width
+    private func hideSyntax(_ storage: NSTextStorage, range: NSRange, textLength: Int) {
+        guard isValidRange(range, in: textLength) else { return }
+
+        // Use tiny font to collapse the characters (takes no horizontal space)
+        storage.addAttribute(.font, value: hiddenFont, range: range)
+        // Make invisible
+        storage.addAttribute(.foregroundColor, value: NSColor.clear, range: range)
+        // Remove any baseline offset that might cause visual issues
+        storage.addAttribute(.baselineOffset, value: 0, range: range)
+    }
+
+    /// Show syntax characters with the syntax color
+    private func showSyntax(_ storage: NSTextStorage, range: NSRange, font: NSFont, textLength: Int) {
+        guard isValidRange(range, in: textLength) else { return }
+
+        storage.addAttribute(.font, value: font, range: range)
+        storage.addAttribute(.foregroundColor, value: theme.syntaxColor, range: range)
+    }
+
     // MARK: - Individual Style Applications
 
     private func applyHeadingStyle(
@@ -113,20 +138,23 @@ class MarkdownStyler {
         reveal: Bool,
         textLength: Int
     ) {
-        // Apply heading font to content
         guard isValidRange(element.contentRange, in: textLength) else { return }
 
         let font = theme.headingFont(level: level)
-        storage.addAttribute(.font, value: font, range: element.contentRange)
+
+        // Apply heading font to the entire range first (including syntax when revealed)
+        if reveal {
+            storage.addAttribute(.font, value: font, range: element.range)
+        } else {
+            storage.addAttribute(.font, value: font, range: element.contentRange)
+        }
 
         // Handle syntax visibility (# characters)
         for syntaxRange in element.syntaxRanges {
-            guard isValidRange(syntaxRange, in: textLength) else { continue }
             if reveal {
-                storage.addAttribute(.foregroundColor, value: theme.syntaxColor, range: syntaxRange)
-                storage.addAttribute(.font, value: font, range: syntaxRange)
+                showSyntax(storage, range: syntaxRange, font: font, textLength: textLength)
             } else {
-                storage.addAttribute(.foregroundColor, value: NSColor.clear, range: syntaxRange)
+                hideSyntax(storage, range: syntaxRange, textLength: textLength)
             }
         }
     }
@@ -146,12 +174,11 @@ class MarkdownStyler {
 
         // Handle ** syntax visibility
         for syntaxRange in element.syntaxRanges {
-            guard isValidRange(syntaxRange, in: textLength) else { continue }
-            storage.addAttribute(
-                .foregroundColor,
-                value: reveal ? theme.syntaxColor : NSColor.clear,
-                range: syntaxRange
-            )
+            if reveal {
+                showSyntax(storage, range: syntaxRange, font: currentFont, textLength: textLength)
+            } else {
+                hideSyntax(storage, range: syntaxRange, textLength: textLength)
+            }
         }
     }
 
@@ -168,12 +195,11 @@ class MarkdownStyler {
         storage.addAttribute(.font, value: italicFont, range: element.contentRange)
 
         for syntaxRange in element.syntaxRanges {
-            guard isValidRange(syntaxRange, in: textLength) else { continue }
-            storage.addAttribute(
-                .foregroundColor,
-                value: reveal ? theme.syntaxColor : NSColor.clear,
-                range: syntaxRange
-            )
+            if reveal {
+                showSyntax(storage, range: syntaxRange, font: currentFont, textLength: textLength)
+            } else {
+                hideSyntax(storage, range: syntaxRange, textLength: textLength)
+            }
         }
     }
 
@@ -198,12 +224,11 @@ class MarkdownStyler {
         storage.addAttribute(.font, value: boldItalicFont, range: element.contentRange)
 
         for syntaxRange in element.syntaxRanges {
-            guard isValidRange(syntaxRange, in: textLength) else { continue }
-            storage.addAttribute(
-                .foregroundColor,
-                value: reveal ? theme.syntaxColor : NSColor.clear,
-                range: syntaxRange
-            )
+            if reveal {
+                showSyntax(storage, range: syntaxRange, font: currentFont, textLength: textLength)
+            } else {
+                hideSyntax(storage, range: syntaxRange, textLength: textLength)
+            }
         }
     }
 
@@ -225,13 +250,13 @@ class MarkdownStyler {
         }
 
         // Handle [ ] ( ) and URL visibility
+        let currentFont = storage.attribute(.font, at: element.contentRange.location, effectiveRange: nil) as? NSFont ?? theme.bodyFont
         for syntaxRange in element.syntaxRanges {
-            guard isValidRange(syntaxRange, in: textLength) else { continue }
-            storage.addAttribute(
-                .foregroundColor,
-                value: reveal ? theme.syntaxColor : NSColor.clear,
-                range: syntaxRange
-            )
+            if reveal {
+                showSyntax(storage, range: syntaxRange, font: currentFont, textLength: textLength)
+            } else {
+                hideSyntax(storage, range: syntaxRange, textLength: textLength)
+            }
         }
     }
 
@@ -241,11 +266,20 @@ class MarkdownStyler {
         reveal: Bool,
         textLength: Int
     ) {
-        // For lists, we keep the bullet/number visible but style it
+        // For lists, replace the markdown bullet with a proper bullet character visually
+        // Keep list markers visible but styled
+        let currentFont = storage.attribute(.font, at: element.range.location, effectiveRange: nil) as? NSFont ?? theme.bodyFont
+
         for syntaxRange in element.syntaxRanges {
             guard isValidRange(syntaxRange, in: textLength) else { continue }
-            // Keep list markers visible but in a subtle color
-            storage.addAttribute(.foregroundColor, value: theme.syntaxColor, range: syntaxRange)
+
+            if reveal {
+                // Show the original markdown syntax
+                showSyntax(storage, range: syntaxRange, font: currentFont, textLength: textLength)
+            } else {
+                // Style the bullet/number subtly
+                storage.addAttribute(.foregroundColor, value: theme.syntaxColor.withAlphaComponent(0.6), range: syntaxRange)
+            }
         }
     }
 
@@ -259,16 +293,19 @@ class MarkdownStyler {
 
         // Apply blockquote paragraph style
         storage.addAttribute(.paragraphStyle, value: theme.blockquoteParagraphStyle, range: element.range)
-        storage.addAttribute(.foregroundColor, value: theme.blockquoteTextColor, range: element.contentRange)
+
+        if isValidRange(element.contentRange, in: textLength) {
+            storage.addAttribute(.foregroundColor, value: theme.blockquoteTextColor, range: element.contentRange)
+        }
 
         // Handle > syntax visibility
+        let currentFont = storage.attribute(.font, at: element.range.location, effectiveRange: nil) as? NSFont ?? theme.bodyFont
         for syntaxRange in element.syntaxRanges {
-            guard isValidRange(syntaxRange, in: textLength) else { continue }
-            storage.addAttribute(
-                .foregroundColor,
-                value: reveal ? theme.syntaxColor : NSColor.clear,
-                range: syntaxRange
-            )
+            if reveal {
+                showSyntax(storage, range: syntaxRange, font: currentFont, textLength: textLength)
+            } else {
+                hideSyntax(storage, range: syntaxRange, textLength: textLength)
+            }
         }
     }
 
@@ -286,12 +323,11 @@ class MarkdownStyler {
 
         // Handle ` syntax visibility
         for syntaxRange in element.syntaxRanges {
-            guard isValidRange(syntaxRange, in: textLength) else { continue }
-            storage.addAttribute(
-                .foregroundColor,
-                value: reveal ? theme.syntaxColor : NSColor.clear,
-                range: syntaxRange
-            )
+            if reveal {
+                showSyntax(storage, range: syntaxRange, font: theme.monoFont, textLength: textLength)
+            } else {
+                hideSyntax(storage, range: syntaxRange, textLength: textLength)
+            }
         }
     }
 
