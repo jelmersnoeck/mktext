@@ -10,7 +10,7 @@ let package = Package(
         .executable(name: "mktext", targets: ["mktext"])
     ],
     dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-markdown.git", branch: "main")
+        .package(url: "https://github.com/swiftlang/swift-markdown.git", from: "0.4.0")
     ],
     targets: [
         .executableTarget(

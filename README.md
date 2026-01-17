@@ -205,27 +205,47 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes
+4. Commit using [Conventional Commits](https://www.conventionalcommits.org/):
+   ```bash
+   git commit -m "feat: add dark mode support"
+   git commit -m "fix: resolve cursor positioning bug"
+   git commit -m "docs: update installation instructions"
+   ```
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+### Commit Types
+
+| Type | Description | Version Bump |
+|------|-------------|--------------|
+| `feat` | New feature | Minor (0.x.0) |
+| `fix` | Bug fix | Patch (0.0.x) |
+| `docs` | Documentation only | None |
+| `style` | Code style (formatting) | None |
+| `refactor` | Code refactoring | None |
+| `perf` | Performance improvement | Patch |
+| `test` | Adding tests | None |
+| `chore` | Maintenance | None |
 
 ## Releasing
 
-Releases are automated via GitHub Actions. To create a new release:
+Releases are fully automated using [Release Please](https://github.com/googleapis/release-please).
 
-1. Update version references if needed
-2. Create and push a version tag:
-   ```bash
-   git tag v1.0.0
-   git push origin v1.0.0
-   ```
-3. GitHub Actions will automatically:
-   - Build a universal binary (Apple Silicon + Intel)
-   - Create the app bundle with icon
-   - Generate a DMG installer
-   - Create a GitHub Release with artifacts
+**How it works:**
 
-You can also manually trigger a release from the Actions tab using "workflow_dispatch".
+1. Push commits to `main` using conventional commit messages
+2. Release Please automatically creates/updates a Release PR
+3. The Release PR accumulates changes and updates the CHANGELOG
+4. When you merge the Release PR:
+   - A new version tag is created
+   - GitHub Release is published
+   - DMG and ZIP artifacts are built and attached
+
+**Version bumping:**
+- `feat:` commits bump the minor version (0.1.0 → 0.2.0)
+- `fix:` commits bump the patch version (0.1.0 → 0.1.1)
+- `feat!:` or `BREAKING CHANGE:` bumps major version (0.1.0 → 1.0.0)
 
 ## Roadmap
 
