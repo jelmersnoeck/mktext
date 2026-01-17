@@ -1,0 +1,38 @@
+# Build artifacts
+.build/
+Build/
+DerivedData/
+
+# Xcode
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# App bundle (built locally)
+*.app/
+
+# Generated files
+mktext.iconset/
+generate_icon.swift
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Test output
+*.xcresult

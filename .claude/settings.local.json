@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(git -C /Users/jelmersnoeck/Projects/mktext status)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:gist.github.com)",
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(pgrep:*)",
+      "Bash(pkill:*)",
+      "Bash(open:*)",
+      "Bash(chmod:*)",
+      "Bash(python3:*)",
+      "Bash(swift generate_icon.swift:*)",
+      "Bash(iconutil -c icns:*)"
+    ]
+  }
+}
