@@ -7,7 +7,12 @@ class WYSIWYGCoordinator: NSObject, NSTextViewDelegate {
     weak var textView: NSTextView?
 
     private let parser = MarkdownParser()
-    private let styler = MarkdownStyler()
+    private var styler: MarkdownStyler
+    var theme: MarkdownTheme {
+        didSet {
+            styler = MarkdownStyler(theme: theme)
+        }
+    }
 
     private var currentCursorPosition: Int = 0
     var showRawMarkdown: Bool = false
@@ -16,8 +21,10 @@ class WYSIWYGCoordinator: NSObject, NSTextViewDelegate {
     private var notificationObservers: [NSObjectProtocol] = []
     private var stylingWorkItem: DispatchWorkItem?
 
-    init(_ parent: WYSIWYGTextView) {
+    init(_ parent: WYSIWYGTextView, theme: MarkdownTheme) {
         self.parent = parent
+        self.theme = theme
+        self.styler = MarkdownStyler(theme: theme)
         super.init()
         setupNotificationObservers()
     }

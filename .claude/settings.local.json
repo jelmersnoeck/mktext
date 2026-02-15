@@ -14,7 +14,11 @@
       "Bash(python3:*)",
       "Bash(swift generate_icon.swift:*)",
       "Bash(iconutil -c icns:*)",
-      "Bash(./scripts/build.sh:*)"
+      "Bash(./scripts/build.sh:*)",
+      "Bash(swift:*)",
+      "Bash(head:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(codesign:*)"
     ]
   }
 }

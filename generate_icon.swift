@@ -83,12 +83,22 @@ func saveImage(_ image: NSImage, to path: String) {
     }
 }
 
-// Create iconset directory
-let iconsetPath = "/Users/jelmersnoeck/Projects/mktext/mktext.iconset"
+// Create iconset directory in current working directory
+let currentDirectory = FileManager.default.currentDirectoryPath
+let iconsetPath = "\(currentDirectory)/AppIcon.iconset"
 let fileManager = FileManager.default
 
-try? fileManager.removeItem(atPath: iconsetPath)
-try! fileManager.createDirectory(atPath: iconsetPath, withIntermediateDirectories: true)
+// Remove existing iconset if present
+if fileManager.fileExists(atPath: iconsetPath) {
+    try? fileManager.removeItem(atPath: iconsetPath)
+}
+
+do {
+    try fileManager.createDirectory(atPath: iconsetPath, withIntermediateDirectories: true)
+} catch {
+    print("Error creating iconset directory: \(error)")
+    exit(1)
+}
 
 // Generate icons at different sizes
 for size in sizes {
@@ -113,4 +123,4 @@ let largeIcon = createIcon(size: 1024)
 saveImage(largeIcon, to: "\(iconsetPath)/icon_512x512@2x.png")
 
 print("\nIconset created at: \(iconsetPath)")
-print("Run: iconutil -c icns \(iconsetPath)")
+print("Run: iconutil -c icns AppIcon.iconset -o AppIcon.icns")

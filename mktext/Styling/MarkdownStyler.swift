@@ -141,13 +141,15 @@ class MarkdownStyler {
         guard isValidRange(element.contentRange, in: textLength) else { return }
 
         let font = theme.headingFont(level: level)
+        let paragraphStyle = theme.headingParagraphStyle(level: level)
 
-        // Apply heading font to the entire range first (including syntax when revealed)
+        // Apply heading font and paragraph style to the entire range
         if reveal {
             storage.addAttribute(.font, value: font, range: element.range)
         } else {
             storage.addAttribute(.font, value: font, range: element.contentRange)
         }
+        storage.addAttribute(.paragraphStyle, value: paragraphStyle, range: element.range)
 
         // Handle syntax visibility (# characters)
         for syntaxRange in element.syntaxRanges {
@@ -167,9 +169,9 @@ class MarkdownStyler {
     ) {
         guard isValidRange(element.contentRange, in: textLength) else { return }
 
-        // Get current font at this range and make it bold
+        // Use semibold (weight 600) to match blog's strong { font-weight: 600 }
         let currentFont = storage.attribute(.font, at: element.contentRange.location, effectiveRange: nil) as? NSFont ?? theme.bodyFont
-        let boldFont = NSFontManager.shared.convert(currentFont, toHaveTrait: .boldFontMask)
+        let boldFont = NSFont.systemFont(ofSize: currentFont.pointSize, weight: .semibold)
         storage.addAttribute(.font, value: boldFont, range: element.contentRange)
 
         // Handle ** syntax visibility
@@ -211,16 +213,10 @@ class MarkdownStyler {
     ) {
         guard isValidRange(element.contentRange, in: textLength) else { return }
 
+        // Use semibold + italic to match blog's strong { font-weight: 600 }
         let currentFont = storage.attribute(.font, at: element.contentRange.location, effectiveRange: nil) as? NSFont ?? theme.bodyFont
-        var traits: NSFontTraitMask = []
-        traits.insert(.boldFontMask)
-        traits.insert(.italicFontMask)
-        let boldItalicFont = NSFontManager.shared.font(
-            withFamily: currentFont.familyName ?? "System Font",
-            traits: traits,
-            weight: 9,
-            size: currentFont.pointSize
-        ) ?? currentFont
+        let semiboldFont = NSFont.systemFont(ofSize: currentFont.pointSize, weight: .semibold)
+        let boldItalicFont = NSFontManager.shared.convert(semiboldFont, toHaveTrait: .italicFontMask)
         storage.addAttribute(.font, value: boldItalicFont, range: element.contentRange)
 
         for syntaxRange in element.syntaxRanges {
@@ -266,7 +262,11 @@ class MarkdownStyler {
         reveal: Bool,
         textLength: Int
     ) {
-        // For lists, replace the markdown bullet with a proper bullet character visually
+        guard isValidRange(element.range, in: textLength) else { return }
+
+        // Apply list paragraph style (indentation and spacing)
+        storage.addAttribute(.paragraphStyle, value: theme.listParagraphStyle, range: element.range)
+
         // Keep list markers visible but styled
         let currentFont = storage.attribute(.font, at: element.range.location, effectiveRange: nil) as? NSFont ?? theme.bodyFont
 

@@ -19,6 +19,7 @@ Package.resolved
 *.app/
 
 # Generated files
+AppIcon.iconset/
 mktext.iconset/
 *.dmg
 *.dmg.sha256

@@ -1,40 +1,101 @@
 import SwiftUI
 
-/// Main editor view containing toolbar, text editor, and status bar
+/// Main editor view mimicking jlmr.dev website layout
 struct EditorView: View {
     @Binding var document: MarkdownDocument
     @State private var isShowingRawMarkdown = false
     @State private var cursorPosition: Int = 0
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var theme: MarkdownTheme {
+        colorScheme == .dark ? .jlmrDevDark : .jlmrDev
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            // Toolbar
+            // Minimal toolbar (hidden by default for clean look)
             ToolbarView(isShowingRaw: $isShowingRawMarkdown)
+                .opacity(0.8)
 
-            Divider()
+            // Website-style container
+            GeometryReader { geometry in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        // Website Header
+                        WebsiteHeaderView(theme: theme)
 
-            // Editor
-            WYSIWYGTextView(
-                text: $document.text,
-                isShowingRawMarkdown: $isShowingRawMarkdown,
-                onCursorPositionChange: { position in
-                    cursorPosition = position
+                        // Main content area - centered with max-width
+                        VStack(alignment: .leading, spacing: 0) {
+                            WYSIWYGTextView(
+                                text: $document.text,
+                                isShowingRawMarkdown: $isShowingRawMarkdown,
+                                theme: theme,
+                                onCursorPositionChange: { position in
+                                    cursorPosition = position
+                                }
+                            )
+                            .frame(minHeight: max(400, geometry.size.height - 200))
+                        }
+                        .frame(maxWidth: 700, alignment: .leading)
+                        .frame(maxWidth: .infinity)
+
+                        // Website Footer
+                        WebsiteFooterView(theme: theme)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 32)
                 }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .background(Color(theme.backgroundColor))
 
-            Divider()
-
-            // Status bar
+            // Subtle status bar
             StatusBarView(
                 wordCount: document.text.wordCount,
                 lineCount: document.text.lineCount,
                 cursorPosition: cursorPosition,
-                isRawMode: isShowingRawMarkdown
+                isRawMode: isShowingRawMarkdown,
+                theme: theme
             )
         }
-        .background(Color(NSColor.textBackgroundColor))
-        .frame(minWidth: 500, minHeight: 400)
+        .background(Color(theme.backgroundColor))
+        .frame(minWidth: 600, minHeight: 500)
+    }
+}
+
+/// Website header mimicking jlmr.dev
+struct WebsiteHeaderView: View {
+    let theme: MarkdownTheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Jelmer Snoeck")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(Color(theme.textColor))
+        }
+        .frame(maxWidth: 700, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .padding(.bottom, 48)
+    }
+}
+
+/// Website footer mimicking jlmr.dev
+struct WebsiteFooterView: View {
+    let theme: MarkdownTheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Rectangle()
+                .fill(Color(theme.syntaxColor).opacity(0.3))
+                .frame(height: 1)
+                .padding(.top, 64)
+                .padding(.bottom, 16)
+
+            Text("Jelmer Snoeck")
+                .font(.system(size: 14))
+                .foregroundColor(Color(theme.syntaxColor))
+        }
+        .frame(maxWidth: 700, alignment: .leading)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -44,39 +105,42 @@ struct StatusBarView: View {
     let lineCount: Int
     let cursorPosition: Int
     let isRawMode: Bool
+    let theme: MarkdownTheme
 
     var body: some View {
         HStack {
             Text("\(wordCount) words")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.system(size: 12))
+                .foregroundColor(Color(theme.syntaxColor))
 
-            Divider()
-                .frame(height: 12)
+            Text("·")
+                .foregroundColor(Color(theme.syntaxColor).opacity(0.5))
 
             Text("\(lineCount) lines")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.system(size: 12))
+                .foregroundColor(Color(theme.syntaxColor))
 
             Spacer()
 
             if isRawMode {
                 Text("Raw Markdown")
-                    .font(.caption)
-                    .foregroundColor(.orange)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(theme.linkColor))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color.orange.opacity(0.1))
+                    .background(Color(theme.linkColor).opacity(0.1))
                     .cornerRadius(4)
             }
-
-            Text("Position: \(cursorPosition)")
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Color(NSColor.controlBackgroundColor))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color(theme.backgroundColor))
+        .overlay(
+            Rectangle()
+                .fill(Color(theme.syntaxColor).opacity(0.2))
+                .frame(height: 1),
+            alignment: .top
+        )
     }
 }
 

@@ -46,7 +46,7 @@ jobs:
       - name: Generate app icon
         run: |
           swift generate_icon.swift
-          iconutil -c icns mktext.iconset -o AppIcon.icns
+          iconutil -c icns AppIcon.iconset -o AppIcon.icns
 
       - name: Create app bundle
         env:

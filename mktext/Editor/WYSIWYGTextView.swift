@@ -5,6 +5,7 @@ import AppKit
 struct WYSIWYGTextView: NSViewRepresentable {
     @Binding var text: String
     @Binding var isShowingRawMarkdown: Bool
+    var theme: MarkdownTheme
 
     var onCursorPositionChange: ((Int) -> Void)?
 
@@ -12,15 +13,15 @@ struct WYSIWYGTextView: NSViewRepresentable {
         let scrollView = NSScrollView()
         let textView = NSTextView()
 
-        // Configure scroll view
-        scrollView.hasVerticalScroller = true
+        // Configure scroll view - transparent to show parent background
+        scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
         scrollView.borderType = .noBorder
-        scrollView.drawsBackground = true
-        scrollView.backgroundColor = NSColor.textBackgroundColor
+        scrollView.drawsBackground = false
+        scrollView.backgroundColor = .clear
 
-        // Configure text view
+        // Configure text view with theme colors
         textView.isRichText = true
         textView.allowsUndo = true
         textView.isEditable = true
@@ -33,22 +34,23 @@ struct WYSIWYGTextView: NSViewRepresentable {
         textView.isAutomaticLinkDetectionEnabled = false
         textView.smartInsertDeleteEnabled = false
 
-        textView.font = NSFont.systemFont(ofSize: 16)
-        textView.textColor = NSColor.textColor
-        textView.backgroundColor = NSColor.textBackgroundColor
-        textView.insertionPointColor = NSColor.textColor
+        textView.font = theme.bodyFont
+        textView.textColor = theme.textColor
+        textView.drawsBackground = false
+        textView.backgroundColor = .clear
+        textView.insertionPointColor = theme.textColor
 
         textView.autoresizingMask = [.width]
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
 
-        // Set up text container
+        // Set up text container - minimal padding for clean look
         textView.textContainer?.containerSize = NSSize(
             width: scrollView.contentSize.width,
             height: CGFloat.greatestFiniteMagnitude
         )
         textView.textContainer?.widthTracksTextView = true
-        textView.textContainer?.lineFragmentPadding = 40
+        textView.textContainer?.lineFragmentPadding = 0
 
         // Set delegate
         textView.delegate = context.coordinator
@@ -57,6 +59,7 @@ struct WYSIWYGTextView: NSViewRepresentable {
 
         // Store reference in coordinator
         context.coordinator.textView = textView
+        context.coordinator.theme = theme
 
         // Initial text setup
         textView.string = text
@@ -68,6 +71,14 @@ struct WYSIWYGTextView: NSViewRepresentable {
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
         guard let textView = scrollView.documentView as? NSTextView else { return }
 
+        // Update theme if changed (e.g., dark mode switch)
+        let themeChanged = context.coordinator.theme.backgroundColor != theme.backgroundColor
+        if themeChanged {
+            context.coordinator.theme = theme
+            textView.textColor = theme.textColor
+            textView.insertionPointColor = theme.textColor
+        }
+
         // Avoid update loops - only update if text actually changed from outside
         if textView.string != text && !context.coordinator.isInternalUpdate {
             let selectedRanges = textView.selectedRanges
@@ -77,14 +88,14 @@ struct WYSIWYGTextView: NSViewRepresentable {
         }
 
         // Update styling mode if changed
-        if context.coordinator.showRawMarkdown != isShowingRawMarkdown {
+        if context.coordinator.showRawMarkdown != isShowingRawMarkdown || themeChanged {
             context.coordinator.showRawMarkdown = isShowingRawMarkdown
             context.coordinator.applyWYSIWYGStyling()
         }
     }
 
     func makeCoordinator() -> WYSIWYGCoordinator {
-        WYSIWYGCoordinator(self)
+        WYSIWYGCoordinator(self, theme: theme)
     }
 }
 
@@ -94,7 +105,8 @@ struct WYSIWYGTextView_Previews: PreviewProvider {
     static var previews: some View {
         WYSIWYGTextView(
             text: .constant("# Hello\n\nThis is **bold** and *italic* text."),
-            isShowingRawMarkdown: .constant(false)
+            isShowingRawMarkdown: .constant(false),
+            theme: .jlmrDev
         )
         .frame(width: 600, height: 400)
     }
