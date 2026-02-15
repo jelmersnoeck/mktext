@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE '(Parsing|Styling)/' ; then cd /Users/jelmersnoeck/Projects/mktext && swift build --quiet 2>&1 | tail -5 ; fi"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'Package.resolved' ; then echo 'Do not edit Package.resolved directly. Use swift package resolve instead.' >&2 && exit 2 ; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

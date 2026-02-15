@@ -33,6 +33,9 @@ checksums.txt
 .LSOverride
 ._*
 
+# Claude Code (local settings stay local, project settings are committed)
+.claude/settings.local.json
+
 # IDE
 .idea/
 *.swp
