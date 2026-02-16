@@ -4,7 +4,7 @@ import SwiftUI
 struct mktextApp: App {
     var body: some Scene {
         DocumentGroup(newDocument: MarkdownDocument()) { file in
-            EditorView(document: file.$document)
+            EditorView(document: file.$document, fileURL: file.fileURL)
         }
         .commands {
             CommandGroup(replacing: .textFormatting) {
@@ -36,6 +36,18 @@ struct mktextApp: App {
                         .keyboardShortcut(KeyEquivalent(Character("\(level)")), modifiers: .command)
                     }
                 }
+
+                Divider()
+
+                Button("Add Comment") {
+                    NotificationCenter.default.post(name: .addComment, object: nil)
+                }
+                .keyboardShortcut("m", modifiers: [.command, .option])
+
+                Button("Toggle Comments") {
+                    NotificationCenter.default.post(name: .toggleCommentsSidebar, object: nil)
+                }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
             }
 
             CommandGroup(after: .textEditing) {
@@ -55,4 +67,6 @@ extension Notification.Name {
     static let formatLink = Notification.Name("formatLink")
     static let formatHeading = Notification.Name("formatHeading")
     static let toggleRawMarkdown = Notification.Name("toggleRawMarkdown")
+    static let addComment = Notification.Name("addComment")
+    static let toggleCommentsSidebar = Notification.Name("toggleCommentsSidebar")
 }

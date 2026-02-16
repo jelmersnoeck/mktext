@@ -17,6 +17,8 @@ struct MarkdownTheme {
     let bodyParagraphStyle: NSParagraphStyle
     let blockquoteParagraphStyle: NSParagraphStyle
     let listParagraphStyle: NSParagraphStyle
+    let commentHighlightColor: NSColor
+    let commentHighlightActiveColor: NSColor
 
     func headingFont(level: Int) -> NSFont {
         headingFonts[level] ?? bodyFont
@@ -116,7 +118,9 @@ struct MarkdownTheme {
             style.headIndent = 32               // padding-left: 2rem (wrapped text)
             style.firstLineHeadIndent = 16      // bullet/number starts here
             return style
-        }()
+        }(),
+        commentHighlightColor: NSColor(calibratedRed: 1.0, green: 0.92, blue: 0.65, alpha: 0.35),
+        commentHighlightActiveColor: NSColor(calibratedRed: 1.0, green: 0.85, blue: 0.4, alpha: 0.5)
     )
 
     // MARK: - jlmr.dev Dark Theme
@@ -163,7 +167,9 @@ struct MarkdownTheme {
             style.headIndent = 32
             style.firstLineHeadIndent = 16
             return style
-        }()
+        }(),
+        commentHighlightColor: NSColor(calibratedRed: 0.7, green: 0.6, blue: 0.2, alpha: 0.25),
+        commentHighlightActiveColor: NSColor(calibratedRed: 0.8, green: 0.7, blue: 0.3, alpha: 0.4)
     )
 
     // MARK: - Legacy Themes
@@ -210,6 +216,8 @@ struct MarkdownTheme {
             style.headIndent = 32
             style.firstLineHeadIndent = 16
             return style
-        }()
+        }(),
+        commentHighlightColor: NSColor.systemYellow.withAlphaComponent(0.2),
+        commentHighlightActiveColor: NSColor.systemYellow.withAlphaComponent(0.35)
     )
 }

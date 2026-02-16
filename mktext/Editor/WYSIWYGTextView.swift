@@ -6,6 +6,7 @@ struct WYSIWYGTextView: NSViewRepresentable {
     @Binding var text: String
     @Binding var isShowingRawMarkdown: Bool
     var theme: MarkdownTheme
+    var commentStore: CommentStore
 
     var onCursorPositionChange: ((Int) -> Void)?
 
@@ -95,7 +96,7 @@ struct WYSIWYGTextView: NSViewRepresentable {
     }
 
     func makeCoordinator() -> WYSIWYGCoordinator {
-        WYSIWYGCoordinator(self, theme: theme)
+        WYSIWYGCoordinator(self, theme: theme, commentStore: commentStore)
     }
 }
 
@@ -106,7 +107,8 @@ struct WYSIWYGTextView_Previews: PreviewProvider {
         WYSIWYGTextView(
             text: .constant("# Hello\n\nThis is **bold** and *italic* text."),
             isShowingRawMarkdown: .constant(false),
-            theme: .jlmrDev
+            theme: .jlmrDev,
+            commentStore: CommentStore()
         )
         .frame(width: 600, height: 400)
     }

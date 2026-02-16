@@ -14,6 +14,8 @@ class WYSIWYGCoordinator: NSObject, NSTextViewDelegate {
         }
     }
 
+    let commentStore: CommentStore
+
     private var currentCursorPosition: Int = 0
     var showRawMarkdown: Bool = false
     var isInternalUpdate: Bool = false
@@ -21,16 +23,29 @@ class WYSIWYGCoordinator: NSObject, NSTextViewDelegate {
     private var notificationObservers: [NSObjectProtocol] = []
     private var stylingWorkItem: DispatchWorkItem?
 
-    init(_ parent: WYSIWYGTextView, theme: MarkdownTheme) {
+    /// Tracks the pending edit for comment range remapping
+    private var pendingEdit: (range: NSRange, newLength: Int)?
+
+    init(_ parent: WYSIWYGTextView, theme: MarkdownTheme, commentStore: CommentStore) {
         self.parent = parent
         self.theme = theme
         self.styler = MarkdownStyler(theme: theme)
+        self.commentStore = commentStore
         super.init()
         setupNotificationObservers()
+        setupCommentStoreCallbacks()
     }
 
     deinit {
         notificationObservers.forEach { NotificationCenter.default.removeObserver($0) }
+    }
+
+    private func setupCommentStoreCallbacks() {
+        commentStore.onScrollToRange = { [weak self] range in
+            guard let textView = self?.textView else { return }
+            textView.scrollRangeToVisible(range)
+            textView.showFindIndicator(for: range)
+        }
     }
 
     // MARK: - Notification Observers
@@ -86,13 +101,45 @@ class WYSIWYGCoordinator: NSObject, NSTextViewDelegate {
             self?.applyFormatting(.blockquote)
         }
 
-        notificationObservers = [boldObserver, italicObserver, linkObserver, headingObserver, toggleObserver, listObserver, blockquoteObserver]
+        let addCommentObserver = NotificationCenter.default.addObserver(
+            forName: .addComment, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.beginAddComment()
+        }
+
+        let toggleCommentsObserver = NotificationCenter.default.addObserver(
+            forName: .toggleCommentsSidebar, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.commentStore.showSidebar.toggle()
+        }
+
+        notificationObservers = [
+            boldObserver, italicObserver, linkObserver, headingObserver,
+            toggleObserver, listObserver, blockquoteObserver,
+            addCommentObserver, toggleCommentsObserver
+        ]
     }
 
     // MARK: - NSTextViewDelegate
 
+    func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
+        // Capture edit info for range remapping in textDidChange
+        pendingEdit = (range: affectedCharRange, newLength: replacementString?.count ?? 0)
+        return true
+    }
+
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else { return }
+
+        // Remap comment ranges based on the edit
+        if let edit = pendingEdit {
+            commentStore.remapRanges(
+                editLocation: edit.range.location,
+                oldLength: edit.range.length,
+                newLength: edit.newLength
+            )
+            pendingEdit = nil
+        }
 
         // Update parent binding
         isInternalUpdate = true
@@ -156,7 +203,7 @@ class WYSIWYGCoordinator: NSObject, NSTextViewDelegate {
         // Parse markdown
         let elements = parser.parse(text)
 
-        // Apply styling
+        // Apply markdown styling
         styler.applyStyles(
             to: textStorage,
             elements: elements,
@@ -164,8 +211,29 @@ class WYSIWYGCoordinator: NSObject, NSTextViewDelegate {
             showRawMarkdown: showRawMarkdown
         )
 
+        // Apply comment highlights on top
+        styler.applyCommentHighlights(
+            to: textStorage,
+            comments: commentStore.comments,
+            selectedCommentID: commentStore.selectedCommentID
+        )
+
         // Restore selection
         textView.selectedRanges = savedSelection
+    }
+
+    // MARK: - Comments
+
+    private func beginAddComment() {
+        guard let textView = textView else { return }
+        let range = textView.selectedRange()
+        guard range.length > 0 else { return }
+
+        let anchorText = (textView.string as NSString).substring(with: range)
+        commentStore.pendingRange = range
+        commentStore.pendingAnchorText = anchorText
+        commentStore.isAddingComment = true
+        commentStore.showSidebar = true
     }
 
     // MARK: - Formatting Actions

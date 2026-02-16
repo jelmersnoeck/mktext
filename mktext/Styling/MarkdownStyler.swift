@@ -331,6 +331,29 @@ class MarkdownStyler {
         }
     }
 
+    // MARK: - Comment Highlights
+
+    /// Apply background highlights for commented text ranges.
+    /// Call this AFTER applyStyles so comment highlights layer on top.
+    func applyCommentHighlights(
+        to textStorage: NSTextStorage,
+        comments: [Comment],
+        selectedCommentID: UUID?
+    ) {
+        let textLength = textStorage.string.count
+        guard textLength > 0 else { return }
+
+        for comment in comments where !comment.resolved && !comment.isOrphaned {
+            let range = comment.range
+            guard isValidRange(range, in: textLength) else { continue }
+
+            let color = comment.id == selectedCommentID
+                ? theme.commentHighlightActiveColor
+                : theme.commentHighlightColor
+            textStorage.addAttribute(.backgroundColor, value: color, range: range)
+        }
+    }
+
     // MARK: - Helpers
 
     private func isValidRange(_ range: NSRange, in textLength: Int) -> Bool {
